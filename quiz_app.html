@@ -323,10 +323,26 @@
             quizData.forEach((q, index) => {
                 const questionDiv = document.createElement('div');
                 questionDiv.className = 'question-container';
+
+                // Build audio element if audio_url exists
+                let audioHtml = '';
+                if (q.audio_url) {
+                    const fullAudioUrl = baseDomain + q.audio_url;
+                    audioHtml = `
+                        <div style="margin-bottom: 15px;">
+                            <audio controls style="width: 100%;">
+                                <source src="${fullAudioUrl}" type="audio/mp3">
+                                <source src="${fullAudioUrl}" type="audio/ogg">
+                                Your browser does not support the audio element.
+                            </audio>
+                        </div>
+                    `;
+                }
                 questionDiv.innerHTML = `
                     <div class="question-text">
                         <strong>Question ${index + 1}:</strong> ${q.question}
                     </div>
+                    ${audioHtml}
                     <div class="options">
                         ${q.options.map((option, optIndex) => `
                             <label class="option" for="q${q.id || index}_opt${optIndex}">
@@ -355,7 +371,7 @@
             const total = quizData.length;
             document.getElementById('progress').textContent = `${answered} of ${total} answered`;
             
-            document.getElementById('submitBtn').disabled = answered < total;
+            // document.getElementById('submitBtn').disabled = answered < total;
         }
 
         document.getElementById('quizForm').addEventListener('submit', function(e) {
@@ -366,9 +382,9 @@
             
             // Collect answers
             quizData.forEach((q, index) => {
-                const questionKey = `question_${q.id || index}`;
+                const questionKey = `question_${q.id}`;
                 if (formData.has(questionKey)) {
-                    userAnswers[q.id || index] = parseInt(formData.get(questionKey));
+                    userAnswers[q.id] = parseInt(formData.get(questionKey));
                 }
             });
             
@@ -381,9 +397,16 @@
             
             // Mark correct/incorrect answers
             quizData.forEach((q, index) => {
-                const questionId = q.id || index;
+                const questionId = q.id;
                 const userAnswer = userAnswers[questionId];
-                const correctAnswer = q.correct;
+
+                // Convert correct answer to index (A=0, B=1, C=2, D=3)
+                let correctAnswer;
+                if (typeof q.correct === 'string') {
+                    correctAnswer = q.correct.toUpperCase().charCodeAt(0) - 65; // A=0, B=1, etc.
+                } else {
+                    correctAnswer = q.correct;
+                }
                 
                 const questionContainer = document.querySelectorAll('.question-container')[index];
                 const options = questionContainer.querySelectorAll('.option');
@@ -399,6 +422,7 @@
                 if (userAnswer === correctAnswer) {
                     correct++;
                 }
+                console.log(`Q-${index}: user = ${userAnswer}, correct = ${q.correct} - ${correctAnswer}`)
             });
             
             const percentage = Math.round((correct / total) * 100);
@@ -438,6 +462,10 @@
             document.getElementById('progress').textContent = `0 of ${quizData.length} answered`;
             
             userAnswers = {};
+            
+            // Show set selection again
+            document.getElementById('setSelection').style.display = 'block';
+            document.getElementById('quizContent').style.display = 'none';
             
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
