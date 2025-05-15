@@ -182,10 +182,26 @@
         </div>
         
         <div class="file-input">
+            <label for="baseDomain">
+                <strong>Base Domain for Media Files:</strong><br>
+                <input type="text" id="baseDomain" placeholder=".com" style="width: 200px; padding: 8px; border: 2px solid #e2e8f0; border-radius: 5px; margin-bottom: 15px;" />
+            </label>
+            <br>
             <label for="jsonFile">
                 <strong>Load Quiz Questions (JSON file):</strong><br>
                 <input type="file" id="jsonFile" accept=".json" />
             </label>
+        </div>
+        
+        <div id="setSelection" class="file-input" style="display: none;">
+            <label for="quizSet">
+                <strong>Select Quiz Set:</strong><br>
+                <select id="quizSet" style="width: 200px; padding: 10px; border: 2px solid #e2e8f0; border-radius: 5px; font-size: 16px;">
+                    <option value="">Choose a set...</option>
+                </select>
+            </label>
+            <br>
+            <button onclick="loadSelectedSet()" class="submit-btn" style="margin-top: 15px;">Load Quiz Set</button>
         </div>
         
         <div id="quizContent" style="display: none;">
@@ -210,18 +226,8 @@
     <script>
         let quizData = [];
         let userAnswers = {};
-
-        // Expected JSON format example
-        const sampleFormat = {
-            "questions": [
-                {
-                    "id": 1,
-                    "question": "What is the capital of France?",
-                    "options": ["London", "Berlin", "Paris", "Madrid"],
-                    "correct": 2
-                }
-            ]
-        };
+        let fullQuizData = {};
+        let baseDomain = '';
 
         document.getElementById('jsonFile').addEventListener('change', function(event) {
             const file = event.target.files[0];
@@ -230,7 +236,7 @@
                 reader.onload = function(e) {
                     try {
                         const data = JSON.parse(e.target.result);
-                        loadQuiz(data);
+                        loadQuizSets(data);
                     } catch (error) {
                         alert('Invalid JSON file. Please check the file format.');
                         console.error('JSON parsing error:', error);
@@ -242,23 +248,50 @@
             }
         });
 
-        function loadQuiz(data) {
-            // Support different JSON structures
-            if (data.questions) {
-                quizData = data.questions;
-            } else if (Array.isArray(data)) {
-                quizData = data;
-            } else {
-                alert('Invalid quiz format. Expected "questions" array or direct array of questions.');
+        function loadQuizSets(data) {
+            baseDomain = document.getElementById('baseDomain').value.trim();
+            if (!baseDomain) {
+                alert('Please enter a base domain first.');
                 return;
             }
 
-            if (quizData.length === 0) {
-                alert('No questions found in the file.');
+            // Ensure domain starts with http/https
+            if (!baseDomain.startsWith('http://') && !baseDomain.startsWith('https://')) {
+                baseDomain = 'https://' + baseDomain;
+            }
+
+            fullQuizData = data;
+            
+            // Populate the set selection dropdown
+            const setSelect = document.getElementById('quizSet');
+            setSelect.innerHTML = '<option value="">Choose a set...</option>';
+            
+            Object.keys(data).forEach(setId => {
+                const option = document.createElement('option');
+                option.value = setId;
+                option.textContent = `Quiz Set ${setId} (${data[setId].length} questions)`;
+                setSelect.appendChild(option);
+            });
+            
+            document.getElementById('setSelection').style.display = 'block';
+        }
+
+        function loadSelectedSet() {
+            const selectedSet = document.getElementById('quizSet').value;
+            if (!selectedSet) {
+                alert('Please select a quiz set.');
+                return;
+            }
+
+            quizData = fullQuizData[selectedSet];
+            
+            if (!quizData || quizData.length === 0) {
+                alert('No questions found in the selected set.');
                 return;
             }
 
             displayQuiz();
+            document.getElementById('setSelection').style.display = 'none';
         }
 
         function displayQuiz() {
