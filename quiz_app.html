@@ -66,6 +66,22 @@
             color: #2d3748;
         }
         
+        .question-transcript {
+            margin-bottom: 15px;
+        }
+        
+        .question-transcript summary {
+            cursor: pointer;
+            color: #4a5568;
+            font-weight: 600;
+        }
+        
+        .transcript-body {
+            margin-top: 8px;
+            color: #2d3748;
+            white-space: pre-wrap;
+        }
+        
         .options {
             display: grid;
             gap: 10px;
@@ -184,7 +200,7 @@
         <div class="file-input">
             <label for="baseDomain">
                 <strong>Base Domain for Media Files:</strong><br>
-                <input type="text" id="baseDomain" placeholder=".com" style="width: 200px; padding: 8px; border: 2px solid #e2e8f0; border-radius: 5px; margin-bottom: 15px;" />
+                <input type="text" id="baseDomain" placeholder=".com" value=".com" style="width: 200px; padding: 8px; border: 2px solid #e2e8f0; border-radius: 5px; margin-bottom: 15px;" />
             </label>
             <br>
             <label for="jsonFile">
@@ -323,6 +339,10 @@
                             </label>
                         `).join('')}
                     </div>
+                    <details class="question-transcript">
+                        <summary><strong>Transcript</strong></summary>
+                        <div class="transcript-body">${q.transcript}</div>
+                    </details>
                 `;
                 container.appendChild(questionDiv);
             });
