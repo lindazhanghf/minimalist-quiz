@@ -59,6 +59,43 @@
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
         }
         
+        .question-details {
+            width: 100%;
+        }
+        
+        .question-summary {
+            cursor: pointer;
+            outline: none;
+            padding: 0;
+        }
+        
+        .question-summary::-webkit-details-marker {
+            display: none;
+        }
+        
+        .question-summary::before {
+            content: '▶';
+            display: inline-block;
+            margin-right: 10px;
+            transition: transform 0.3s ease;
+            color: #667eea;
+            font-size: 0.8em;
+        }
+        
+        .question-details[open] .question-summary::before {
+            transform: rotate(90deg);
+        }
+        
+        .question-content {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .audio-placeholder {
+            min-height: 20px;
+        }
+        
         .question-text {
             font-size: 1.2em;
             font-weight: 600;
@@ -321,28 +358,18 @@
             document.getElementById('progress').textContent = `0 of ${quizData.length} answered`;
             
             quizData.forEach((q, index) => {
-                const questionDiv = document.createElement('div');
-                questionDiv.className = 'question-container';
+                const questionDiv = document.createElement('details');
+                questionDiv.className = 'question-container .question-details';
+                // Create a unique ID for this question's audio container
+                const audioContainerId = `audio-container-${q.id || index}`;
 
-                // Build audio element if audio_url exists
-                let audioHtml = '';
-                if (q.audio_url) {
-                    const fullAudioUrl = baseDomain + q.audio_url;
-                    audioHtml = `
-                        <div style="margin-bottom: 15px;">
-                            <audio controls style="width: 100%;">
-                                <source src="${fullAudioUrl}" type="audio/mp3">
-                                <source src="${fullAudioUrl}" type="audio/ogg">
-                                Your browser does not support the audio element.
-                            </audio>
-                        </div>
-                    `;
-                }
                 questionDiv.innerHTML = `
-                    <div class="question-text">
-                        <strong>Question ${index + 1}:</strong> ${q.question}
-                    </div>
-                    ${audioHtml}
+                    <summary class="question-summary">
+                        <div class="question-text">
+                            <strong>Question ${index + 1}:</strong> ${q.question}
+                        </div>
+                    </summary>
+                    ${q.audio_url ? `<div id="${audioContainerId}" class="audio-placeholder" data-audio-url="${baseDomain + q.audio_url}"></div>` : ''}
                     <div class="options">
                         ${q.options.map((option, optIndex) => `
                             <label class="option" for="q${q.id || index}_opt${optIndex}">
@@ -360,6 +387,27 @@
                         <div class="transcript-body">${q.transcript}</div>
                     </details>
                 `;
+
+                // Add event listener for lazy loading audio
+                const audioContainer = questionDiv.querySelector(`#${audioContainerId}`);
+
+                if (audioContainer) {
+                    questionDiv.addEventListener('toggle', function() {
+                        if (this.open && audioContainer.classList.contains('audio-placeholder')) {
+                            const audioUrl = audioContainer.dataset.audioUrl;
+                            audioContainer.innerHTML = `
+                                <div style="margin-bottom: 15px;">
+                                    <audio controls style="width: 100%;">
+                                        <source src="${audioUrl}" type="audio/mp3">
+                                        <source src="${audioUrl}" type="audio/ogg">
+                                        Your browser does not support the audio element.
+                                    </audio>
+                                </div>
+                            `;
+                            audioContainer.classList.remove('audio-placeholder');
+                        }
+                    });
+                }
                 container.appendChild(questionDiv);
             });
             
