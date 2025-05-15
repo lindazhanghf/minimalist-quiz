@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Quiz</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .quiz-container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+        
+        .quiz-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .quiz-title {
+            color: #4a5568;
+            font-size: 2.5em;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .quiz-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f7fafc;
+            border-radius: 10px;
+        }
+        
+        .question-container {
+            margin-bottom: 30px;
+            padding: 25px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            background: linear-gradient(to right, #f8fafc, #ffffff);
+            transition: all 0.3s ease;
+        }
+        
+        .question-container:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+        }
+        
+        .question-text {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #2d3748;
+        }
+        
+        .options {
+            display: grid;
+            gap: 10px;
+        }
+        
+        .option {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: white;
+        }
+        
+        .option:hover {
+            border-color: #667eea;
+            background: #f7fafc;
+        }
+        
+        .option input[type="radio"] {
+            margin-right: 12px;
+            scale: 1.2;
+        }
+        
+        .option.correct {
+            background: #c6f6d5;
+            border-color: #38a169;
+        }
+        
+        .option.incorrect {
+            background: #fed7d7;
+            border-color: #e53e3e;
+        }
+        
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 30px auto;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .results {
+            text-align: center;
+            padding: 25px;
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+            border-radius: 12px;
+            margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+        }
+        
+        .score {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .file-input {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f7fafc;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        input[type="file"] {
+            margin-top: 10px;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            
+            .quiz-container {
+                padding: 20px;
+            }
+            
+            .quiz-title {
+                font-size: 2em;
+            }
+            
+            .quiz-stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <div class="quiz-header">
+            <h1 class="quiz-title">📚 Interactive Quiz</h1>
+        </div>
+        
+        <div class="file-input">
+            <label for="jsonFile">
+                <strong>Load Quiz Questions (JSON file):</strong><br>
+                <input type="file" id="jsonFile" accept=".json" />
+            </label>
+        </div>
+        
+        <div id="quizContent" style="display: none;">
+            <div class="quiz-stats">
+                <div><strong>Questions:</strong> <span id="totalQuestions">0</span></div>
+                <div><strong>Progress:</strong> <span id="progress">Not started</span></div>
+            </div>
+            
+            <form id="quizForm">
+                <div id="questionsContainer"></div>
+                <button type="submit" class="submit-btn" id="submitBtn">Submit Quiz</button>
+            </form>
+            
+            <div id="results" class="results" style="display: none;">
+                <div class="score" id="finalScore"></div>
+                <div id="scoreMessage"></div>
+                <button onclick="resetQuiz()" class="submit-btn" style="margin-top: 15px;">Take Quiz Again</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let quizData = [];
+        let userAnswers = {};
+
+        // Expected JSON format example
+        const sampleFormat = {
+            "questions": [
+                {
+                    "id": 1,
+                    "question": "What is the capital of France?",
+                    "options": ["London", "Berlin", "Paris", "Madrid"],
+                    "correct": 2
+                }
+            ]
+        };
+
+        document.getElementById('jsonFile').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file && file.type === 'application/json') {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        loadQuiz(data);
+                    } catch (error) {
+                        alert('Invalid JSON file. Please check the file format.');
+                        console.error('JSON parsing error:', error);
+                    }
+                };
+                reader.readAsText(file);
+            } else {
+                alert('Please select a valid JSON file.');
+            }
+        });
+
+        function loadQuiz(data) {
+            // Support different JSON structures
+            if (data.questions) {
+                quizData = data.questions;
+            } else if (Array.isArray(data)) {
+                quizData = data;
+            } else {
+                alert('Invalid quiz format. Expected "questions" array or direct array of questions.');
+                return;
+            }
+
+            if (quizData.length === 0) {
+                alert('No questions found in the file.');
+                return;
+            }
+
+            displayQuiz();
+        }
+
+        function displayQuiz() {
+            const container = document.getElementById('questionsContainer');
+            const totalQuestionsSpan = document.getElementById('totalQuestions');
+            
+            container.innerHTML = '';
+            userAnswers = {};
+            
+            totalQuestionsSpan.textContent = quizData.length;
+            document.getElementById('progress').textContent = `0 of ${quizData.length} answered`;
+            
+            quizData.forEach((q, index) => {
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'question-container';
+                questionDiv.innerHTML = `
+                    <div class="question-text">
+                        <strong>Question ${index + 1}:</strong> ${q.question}
+                    </div>
+                    <div class="options">
+                        ${q.options.map((option, optIndex) => `
+                            <label class="option" for="q${q.id || index}_opt${optIndex}">
+                                <input type="radio" 
+                                       id="q${q.id || index}_opt${optIndex}" 
+                                       name="question_${q.id || index}" 
+                                       value="${optIndex}"
+                                       onchange="updateProgress()">
+                                <span>${option}</span>
+                            </label>
+                        `).join('')}
+                    </div>
+                `;
+                container.appendChild(questionDiv);
+            });
+            
+            document.getElementById('quizContent').style.display = 'block';
+        }
+
+        function updateProgress() {
+            const answered = document.querySelectorAll('input[type="radio"]:checked').length;
+            const total = quizData.length;
+            document.getElementById('progress').textContent = `${answered} of ${total} answered`;
+            
+            document.getElementById('submitBtn').disabled = answered < total;
+        }
+
+        document.getElementById('quizForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            userAnswers = {};
+            
+            // Collect answers
+            quizData.forEach((q, index) => {
+                const questionKey = `question_${q.id || index}`;
+                if (formData.has(questionKey)) {
+                    userAnswers[q.id || index] = parseInt(formData.get(questionKey));
+                }
+            });
+            
+            showResults();
+        });
+
+        function showResults() {
+            let correct = 0;
+            const total = quizData.length;
+            
+            // Mark correct/incorrect answers
+            quizData.forEach((q, index) => {
+                const questionId = q.id || index;
+                const userAnswer = userAnswers[questionId];
+                const correctAnswer = q.correct;
+                
+                const questionContainer = document.querySelectorAll('.question-container')[index];
+                const options = questionContainer.querySelectorAll('.option');
+                
+                options.forEach((option, optIndex) => {
+                    if (optIndex === correctAnswer) {
+                        option.classList.add('correct');
+                    } else if (optIndex === userAnswer && userAnswer !== correctAnswer) {
+                        option.classList.add('incorrect');
+                    }
+                });
+                
+                if (userAnswer === correctAnswer) {
+                    correct++;
+                }
+            });
+            
+            const percentage = Math.round((correct / total) * 100);
+            document.getElementById('finalScore').textContent = `${correct}/${total} (${percentage}%)`;
+            
+            let message = '';
+            if (percentage >= 90) {
+                message = '🎉 Excellent! Outstanding performance!';
+            } else if (percentage >= 70) {
+                message = '👍 Good job! Well done!';
+            } else if (percentage >= 50) {
+                message = '👌 Not bad! Room for improvement.';
+            } else {
+                message = '📚 Keep studying! You can do better!';
+            }
+            
+            document.getElementById('scoreMessage').textContent = message;
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('submitBtn').style.display = 'none';
+            
+            // Scroll to results
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function resetQuiz() {
+            document.querySelectorAll('.option').forEach(option => {
+                option.classList.remove('correct', 'incorrect');
+            });
+            
+            document.querySelectorAll('input[type="radio"]').forEach(radio => {
+                radio.checked = false;
+            });
+            
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('submitBtn').style.display = 'block';
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('progress').textContent = `0 of ${quizData.length} answered`;
+            
+            userAnswers = {};
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
