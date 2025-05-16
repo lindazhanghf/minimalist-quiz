@@ -184,6 +184,95 @@
             transform: none;
         }
 
+        /* Confirmation Dialog Styles */
+        .dialog-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .dialog {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        .dialog h3 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .dialog p {
+            color: #4a5568;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .dialog-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .dialog-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.2s ease;
+            min-width: 120px;
+        }
+
+        .dialog-btn.primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .dialog-btn.primary:hover {
+            background: #5a67d8;
+        }
+
+        .dialog-btn.secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .dialog-btn.secondary:hover {
+            background: #cbd5e0;
+        }
+
+        .dialog-btn.danger {
+            background: #e53e3e;
+            color: white;
+        }
+
+        .dialog-btn.danger:hover {
+            background: #c53030;
+        }
+
+        .dialog-btn.success {
+            background: #38a169;
+            color: white;
+        }
+
+        .dialog-btn.success:hover {
+            background: #2f855a;
+        }
+
         .results {
             text-align: center;
             padding: 25px;
@@ -270,6 +359,11 @@
             <div class="quiz-stats">
                 <div><strong>Questions:</strong> <span id="totalQuestions">0</span></div>
                 <div><strong>Progress:</strong> <span id="progress">Not started</span></div>
+                <div>
+                    <button id="exportProgressBtn" class="dialog-btn secondary" style="padding: 8px 16px; font-size: 0.9em;" onclick="exportQuizProgress()" disabled>
+                        Export Progress
+                    </button>
+                </div>
             </div>
 
             <form id="quizForm">
@@ -285,11 +379,26 @@
         </div>
     </div>
 
+    <!-- Confirmation Dialog -->
+    <div id="confirmationDialog" class="dialog-overlay">
+        <div class="dialog">
+            <h3 id="dialogTitle">⚠️ Unsaved Progress</h3>
+            <p id="dialogMessage">You have unsaved quiz progress. Are you sure you want to leave? You will lose your current answers.</p>
+            <div class="dialog-buttons">
+                <button class="dialog-btn success" id="exportBtn">💾 Export & Leave</button>
+                <button class="dialog-btn primary" id="stayBtn">Stay</button>
+                <button class="dialog-btn danger" id="leaveBtn">⚠️ Discard progress</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let quizData = [];
         let userAnswers = {};
         let fullQuizData = {};
         let baseDomain = '';
+        let quizStarted = false;
+        let pendingNavigation = null;
 
         document.getElementById('jsonFile').addEventListener('change', function(event) {
             const file = event.target.files[0];
@@ -362,6 +471,7 @@
 
             container.innerHTML = '';
             userAnswers = {};
+            quizStarted = true;
 
             totalQuestionsSpan.textContent = quizData.length;
             document.getElementById('progress').textContent = `0 of ${quizData.length} answered`;
@@ -454,6 +564,22 @@
             const total = quizData.length;
             document.getElementById('progress').textContent = `${answered} of ${total} answered`;
 
+            // Update userAnswers in real-time
+            userAnswers = {};
+            quizData.forEach((q, index) => {
+                const questionKey = `question_${q.id || index}`;
+                const selectedRadio = document.querySelector(`input[name="${questionKey}"]:checked`);
+                if (selectedRadio) {
+                    userAnswers[q.id || index] = parseInt(selectedRadio.value);
+                }
+            });
+
+            // Enable/disable export button based on progress
+            const exportBtn = document.getElementById('exportProgressBtn');
+            if (exportBtn) {
+                exportBtn.disabled = answered === 0;
+            }
+
             // document.getElementById('submitBtn').disabled = answered < total;
         }
 
@@ -528,6 +654,9 @@
 
             // Scroll to results
             document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+            
+            // Quiz is completed, no longer need to prevent navigation
+            quizStarted = false;
         }
 
         function resetQuiz() {
@@ -545,6 +674,7 @@
             document.getElementById('progress').textContent = `0 of ${quizData.length} answered`;
 
             userAnswers = {};
+            quizStarted = false;
 
             // Show set selection again
             document.getElementById('setSelection').style.display = 'block';
@@ -552,6 +682,104 @@
 
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
+
+        // Confirmation Dialog Functions
+        function showConfirmationDialog(message, title = '⚠️ Unsaved Progress') {
+            document.getElementById('dialogTitle').textContent = title;
+            document.getElementById('dialogMessage').textContent = message;
+            document.getElementById('confirmationDialog').style.display = 'flex';
+        }
+
+        function hideConfirmationDialog() {
+            document.getElementById('confirmationDialog').style.display = 'none';
+            pendingNavigation = null;
+        }
+
+        function exportQuizProgress() {
+            const progressData = {
+                quizSet: quizData.id,
+                userAnswers: userAnswers,
+                timestamp: new Date().toISOString()
+            };
+
+            const blob = new Blob([JSON.stringify(progressData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `quiz-progress-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            // Only hide dialog and navigate if this was called from the dialog
+            if (document.getElementById('confirmationDialog').style.display === 'flex') {
+                hideConfirmationDialog();
+                if (pendingNavigation) {
+                    window.location.href = pendingNavigation;
+                }
+            }
+        }
+
+        function hasUnsavedProgress() {
+            return quizStarted && Object.keys(userAnswers).length > 0;
+        }
+
+        // Event Listeners for Dialog Buttons
+        document.getElementById('exportBtn').addEventListener('click', exportQuizProgress);
+        document.getElementById('stayBtn').addEventListener('click', hideConfirmationDialog);
+        document.getElementById('leaveBtn').addEventListener('click', function() {
+            hideConfirmationDialog();
+            if (pendingNavigation) {
+                window.location.href = pendingNavigation;
+            }
+        });
+
+        // Prevent accidental navigation
+        window.addEventListener('beforeunload', function(e) {
+            if (hasUnsavedProgress()) {
+                e.preventDefault();
+                e.returnValue = 'You have unsaved quiz progress. Are you sure you want to leave?';
+                return e.returnValue;
+            }
+        });
+
+        // Handle browser back/forward buttons
+        window.addEventListener('popstate', function(e) {
+            if (hasUnsavedProgress()) {
+                e.preventDefault();
+                showConfirmationDialog('You have unsaved quiz progress. Are you sure you want to navigate away?');
+                // Push the current state back to prevent navigation
+                history.pushState(null, null, window.location.href);
+            }
+        });
+
+        // Handle refresh
+        window.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+                if (hasUnsavedProgress()) {
+                    e.preventDefault();
+                    showConfirmationDialog('You have unsaved quiz progress. Are you sure you want to refresh the page?');
+                }
+            }
+        });
+
+        // Handle visibility change (when user switches tabs or minimizes browser)
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'hidden' && hasUnsavedProgress()) {
+                // User is leaving the page, but we can't prevent it completely
+                // The beforeunload event will handle the confirmation
+            }
+        });
+
+        // Prevent navigation through links when there's unsaved progress
+        document.addEventListener('click', function(e) {
+            if (e.target.tagName === 'A' && hasUnsavedProgress()) {
+                e.preventDefault();
+                pendingNavigation = e.target.href;
+                showConfirmationDialog('You have unsaved quiz progress. Are you sure you want to navigate away?');
+            }
+        });
     </script>
 </body>
 </html>
