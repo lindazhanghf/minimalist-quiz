@@ -95,6 +95,10 @@
         .audio-placeholder {
             min-height: 20px;
         }
+        
+        .image-placeholder {
+            min-height: 20px;
+        }
 
         .question-text {
             font-size: 1.2em;
@@ -367,6 +371,7 @@
                 questionDiv.className = 'question-container .question-details';
                 // Create a unique ID for this question's audio container
                 const audioContainerId = `audio-container-${q.id || index}`;
+                const imageContainerId = `image-container-${q.id || index}`;
 
                 questionDiv.innerHTML = `
                     <summary class="question-summary">
@@ -375,6 +380,7 @@
                         </div>
                     </summary>
                     ${q.audio_url ? `<div id="${audioContainerId}" class="audio-placeholder" data-audio-url="${baseDomain + q.audio_url}"></div>` : ''}
+                    ${q.image_url ? `<div id="${imageContainerId}" class="image-placeholder" data-image-url="${baseDomain + q.image_url}"></div>` : ''}
                     <div class="options">
                         ${q.options.map((option, optIndex) => `
                             <label class="option" for="q${q.id || index}_opt${optIndex}">
@@ -393,12 +399,14 @@
                     </details>
                 `;
 
-                // Add event listener for lazy loading audio
+                // Add event listener for lazy loading media
                 const audioContainer = questionDiv.querySelector(`#${audioContainerId}`);
+                const imageContainer = questionDiv.querySelector(`#${imageContainerId}`);
 
-                if (audioContainer) {
-                    questionDiv.addEventListener('toggle', function() {
-                        if (this.open && audioContainer.classList.contains('audio-placeholder')) {
+                questionDiv.addEventListener('toggle', function() {
+                    if (this.open) {
+                        // Lazy load audio
+                        if (audioContainer && audioContainer.classList.contains('audio-placeholder')) {
                             const audioUrl = audioContainer.dataset.audioUrl;
                             audioContainer.innerHTML = `
                                 <div style="margin-bottom: 15px;">
@@ -411,8 +419,30 @@
                             `;
                             audioContainer.classList.remove('audio-placeholder');
                         }
-                    });
-                }
+
+                        // Lazy load image
+                        if (imageContainer && imageContainer.classList.contains('image-placeholder')) {
+                            const imageUrl = imageContainer.dataset.imageUrl;
+                            console.log(`Loading image for question ID: ${q.id || index}`);
+                            
+                            const img = new Image();
+                            img.onload = function() {
+                                imageContainer.innerHTML = `
+                                    <div style="margin-bottom: 15px; text-align: center;">
+                                        <img src="${imageUrl}" alt="Question ${index + 1} image" style="max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                                    </div>
+                                `;
+                                imageContainer.classList.remove('image-placeholder');
+                            };
+                            img.onerror = function() {
+                                console.log(`Failed to load image for question ID: ${q.id || index}`);
+                                imageContainer.style.display = 'none';
+                            };
+                            img.src = imageUrl;
+                        }
+                    }
+                });
+                
                 container.appendChild(questionDiv);
             });
 
