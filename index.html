@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Quiz</title>
+    <title>✒️ Minimalist Quiz</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -74,7 +74,7 @@
         }
 
         .question-summary::before {
-            content: '▶';
+            /* content: '▶'; */
             display: inline-block;
             margin-right: 10px;
             transition: transform 0.3s ease;
@@ -231,10 +231,15 @@
 <body>
     <div class="quiz-container">
         <div class="quiz-header">
-            <h1 class="quiz-title">📚 Interactive Quiz</h1>
+            <h1 class="quiz-title">✒️ Minimalist Quiz</h1>
         </div>
 
-        <div class="file-input">
+        <details class="file-input" open>
+            <summary class="">
+                <div class="question-text">
+                    Select Quiz
+                </div>
+            </summary>
             <label for="baseDomain">
                 <strong>Base Domain for Media Files:</strong><br>
                 <input type="text" id="baseDomain" placeholder=".com" value=".com" style="width: 200px; padding: 8px; border: 2px solid #e2e8f0; border-radius: 5px; margin-bottom: 15px;" />
@@ -244,18 +249,18 @@
                 <strong>Load Quiz Questions (JSON file):</strong><br>
                 <input type="file" id="jsonFile" accept=".json" />
             </label>
-        </div>
 
-        <div id="setSelection" class="file-input" style="display: none;">
-            <label for="quizSet">
-                <strong>Select Quiz Set:</strong><br>
-                <select id="quizSet" style="width: 200px; padding: 10px; border: 2px solid #e2e8f0; border-radius: 5px; font-size: 16px;">
-                    <option value="">Choose a set...</option>
-                </select>
-            </label>
-            <br>
-            <button onclick="loadSelectedSet()" class="submit-btn" style="margin-top: 15px;">Load Quiz Set</button>
-        </div>
+            <div id="setSelection" class="file-input" style="display: none;">
+                <label for="quizSet">
+                    <strong>Select Quiz Set:</strong><br>
+                    <select id="quizSet" style="width: 200px; padding: 10px; border: 2px solid #e2e8f0; border-radius: 5px; font-size: 16px;">
+                        <option value="">Choose a set...</option>
+                    </select>
+                </label>
+                <br>
+                <button onclick="loadSelectedSet()" class="submit-btn" style="margin-top: 15px;">Load Quiz Set</button>
+            </div>
+        </details>
 
         <div id="quizContent" style="display: none;">
             <div class="quiz-stats">
@@ -344,7 +349,7 @@
             }
 
             displayQuiz();
-            document.getElementById('setSelection').style.display = 'none';
+            // document.getElementById('setSelection').style.display = 'none';
         }
 
         function displayQuiz() {
