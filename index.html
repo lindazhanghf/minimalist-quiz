@@ -357,7 +357,7 @@
 
         <div id="quizContent" style="display: none;">
             <div class="quiz-stats">
-                <div><strong>Questions:</strong> <span id="totalQuestions">0</span></div>
+                <!-- <div><strong>Questions:</strong> <span id="totalQuestions">0</span></div> -->
                 <div><strong>Progress:</strong> <span id="progress">Not started</span></div>
                 <div>
                     <button id="exportProgressBtn" class="dialog-btn secondary" style="padding: 8px 16px; font-size: 0.9em;" onclick="exportQuizProgress()" disabled>
@@ -467,13 +467,13 @@
 
         function displayQuiz() {
             const container = document.getElementById('questionsContainer');
-            const totalQuestionsSpan = document.getElementById('totalQuestions');
+            // const totalQuestionsSpan = document.getElementById('totalQuestions');
 
             container.innerHTML = '';
             userAnswers = {};
             quizStarted = true;
 
-            totalQuestionsSpan.textContent = quizData.length;
+            // totalQuestionsSpan.textContent = quizData.length;
             document.getElementById('progress').textContent = `0 of ${quizData.length} answered`;
 
             quizData.forEach((q, index) => {
