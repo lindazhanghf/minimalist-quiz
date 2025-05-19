@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✒️ Quiz Score</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .category {
+            margin-bottom: 25px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .category-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 15px;
+        }
+        .category-title {
+            font-weight: bold;
+            color: #555;
+            min-width: 100px;
+        }
+        .missed-input {
+            width: 60px;
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .missed-input:focus {
+            border-color: #38a169;
+            outline: none;
+        }
+        .info {
+            font-size: 12px;
+            color: #666;
+        }
+        .buttons-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3px;
+            margin-top: 10px;
+        }
+        .question-btn {
+            width: 30px;
+            height: 30px;
+            border: 1px solid #ccc;
+            background: white;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .question-btn:hover {
+            border-color: #999;
+        }
+        .question-btn.correct {
+            background: #c6f6d5;
+            color: #38a169;
+            border-color: #38a169;
+        }
+        .question-btn.incorrect {
+            background: #fed7d7;
+            color: #e53e3e;
+            border-color: #e53e3e;
+        }
+        .result {
+            margin-top: 25px;
+            padding: 20px;
+            background-color: #e8f5e8;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .score {
+            font-size: 28px;
+            font-weight: bold;
+            color: #38a169;
+            margin-bottom: 10px;
+        }
+        .clb-level {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✒️ Quiz Score</h1>
+
+        <div class="category">
+            <div class="category-header">
+                <div class="category-title">A1 (1-4):</div>
+                <input type="number" class="missed-input" id="a1" min="0" max="4" value="0" oninput="updateFromInput('a1')">
+                <div class="info">3 points each, missed questions</div>
+            </div>
+            <div class="buttons-grid" id="buttons-a1"></div>
+        </div>
+
+        <div class="category">
+            <div class="category-header">
+                <div class="category-title">A2 (5-10):</div>
+                <input type="number" class="missed-input" id="a2" min="0" max="6" value="0" oninput="updateFromInput('a2')">
+                <div class="info">9 points each, missed questions</div>
+            </div>
+            <div class="buttons-grid" id="buttons-a2"></div>
+        </div>
+
+        <div class="category">
+            <div class="category-header">
+                <div class="category-title">B1 (11-19):</div>
+                <input type="number" class="missed-input" id="b1" min="0" max="9" value="0" oninput="updateFromInput('b1')">
+                <div class="info">15 points each, missed questions</div>
+            </div>
+            <div class="buttons-grid" id="buttons-b1"></div>
+        </div>
+
+        <div class="category">
+            <div class="category-header">
+                <div class="category-title">B2 (20-29):</div>
+                <input type="number" class="missed-input" id="b2" min="0" max="10" value="0" oninput="updateFromInput('b2')">
+                <div class="info">21 points each, missed questions</div>
+            </div>
+            <div class="buttons-grid" id="buttons-b2"></div>
+        </div>
+
+        <div class="category">
+            <div class="category-header">
+                <div class="category-title">C1 (30-35):</div>
+                <input type="number" class="missed-input" id="c1" min="0" max="6" value="0" oninput="updateFromInput('c1')">
+                <div class="info">26 points each, missed questions</div>
+            </div>
+            <div class="buttons-grid" id="buttons-c1"></div>
+        </div>
+
+        <div class="category">
+            <div class="category-header">
+                <div class="category-title">C2 (36-39):</div>
+                <input type="number" class="missed-input" id="c2" min="0" max="4" value="0" oninput="updateFromInput('c2')">
+                <div class="info">33 points each, missed questions</div>
+            </div>
+            <div class="buttons-grid" id="buttons-c2"></div>
+        </div>
+
+        <div class="result">
+            <div class="score" id="score">Total Score: 1008</div>
+            <div class="clb-level" id="clb-level">CLB 10+</div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const categories = {
+            a1: { start: 1, count: 4, points: 3 },
+            a2: { start: 5, count: 6, points: 9 },
+            b1: { start: 11, count: 9, points: 15 },
+            b2: { start: 20, count: 10, points: 21 },
+            c1: { start: 30, count: 6, points: 26 },
+            c2: { start: 36, count: 4, points: 33 }
+        };
+
+        const clbLevels = [
+            { min: 549, max: 699, level: "CLB 10+" },
+            { min: 523, max: 548, level: "CLB 9" },
+            { min: 503, max: 522, level: "CLB 8" },
+            { min: 458, max: 502, level: "CLB 7" },
+            { min: 398, max: 457, level: "CLB 6" },
+            { min: 369, max: 397, level: "CLB 5" },
+            { min: 331, max: 368, level: "CLB 4" }
+        ];
+
+        // Track question states (true = correct, false = incorrect)
+        let questionStates = {};
+
+        function initializeButtons() {
+            for (let categoryId in categories) {
+                const category = categories[categoryId];
+                const container = document.getElementById(`buttons-${categoryId}`);
+
+                for (let i = 0; i < category.count; i++) {
+                    const questionNum = category.start + i;
+                    const button = document.createElement('button');
+                    button.className = 'question-btn correct';
+                    button.textContent = questionNum;
+                    button.onclick = () => toggleQuestion(categoryId, questionNum, button);
+                    container.appendChild(button);
+
+                    // Initialize as correct
+                    questionStates[questionNum] = true;
+                }
+            }
+        }
+
+        function toggleQuestion(categoryId, questionNum, buttonElement) {
+            questionStates[questionNum] = !questionStates[questionNum];
+
+            if (questionStates[questionNum]) {
+                buttonElement.className = 'question-btn correct';
+            } else {
+                buttonElement.className = 'question-btn incorrect';
+            }
+
+            updateInputFromButtons(categoryId);
+            calculate();
+        }
+
+        function updateInputFromButtons(categoryId) {
+            const category = categories[categoryId];
+            let missedCount = 0;
+
+            for (let i = 0; i < category.count; i++) {
+                const questionNum = category.start + i;
+                if (!questionStates[questionNum]) {
+                    missedCount++;
+                }
+            }
+
+            document.getElementById(categoryId).value = missedCount;
+        }
+
+        function updateFromInput(categoryId) {
+            const missedCount = parseInt(document.getElementById(categoryId).value) || 0;
+            const category = categories[categoryId];
+
+            // Reset all questions to correct first
+            for (let i = 0; i < category.count; i++) {
+                const questionNum = category.start + i;
+                questionStates[questionNum] = true;
+            }
+
+            // Set the first 'missedCount' questions to incorrect
+            for (let i = 0; i < missedCount && i < category.count; i++) {
+                const questionNum = category.start + i;
+                questionStates[questionNum] = false;
+            }
+
+            // Update button appearances
+            const container = document.getElementById(`buttons-${categoryId}`);
+            const buttons = container.querySelectorAll('.question-btn');
+            buttons.forEach((button, index) => {
+                const questionNum = category.start + index;
+                if (questionStates[questionNum]) {
+                    button.className = 'question-btn correct';
+                } else {
+                    button.className = 'question-btn incorrect';
+                }
+            });
+
+            calculate();
+        }
+
+        function getCLBLevel(score) {
+            for (let level of clbLevels) {
+                if (score >= level.min && score <= level.max) {
+                    return level.level;
+                }
+            }
+            return score < 331 ? "Below CLB 4" : "Above CLB 10+";
+        }
+
+        function calculate() {
+            let totalScore = 0;
+
+            for (let categoryId in categories) {
+                const category = categories[categoryId];
+                let correctCount = 0;
+
+                for (let i = 0; i < category.count; i++) {
+                    const questionNum = category.start + i;
+                    if (questionStates[questionNum]) {
+                        correctCount++;
+                    }
+                }
+
+                totalScore += correctCount * category.points;
+            }
+
+            document.getElementById('score').textContent = `Total Score: ${totalScore}`;
+            document.getElementById('clb-level').textContent = getCLBLevel(totalScore);
+        }
+
+        // Initialize everything
+        initializeButtons();
+        calculate();
+    </script>
+</body>
+</html>
