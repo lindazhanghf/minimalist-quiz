@@ -630,6 +630,8 @@
 
                 if (userAnswer === correctAnswer) {
                     correct++;
+                } else { // For incorrect questions, expand details
+                    questionContainer.setAttribute('open', '');
                 }
                 console.log(`Q-${index}: user = ${userAnswer}, correct = ${q.correct} - ${correctAnswer}`)
             });
@@ -662,6 +664,10 @@
         function resetQuiz() {
             document.querySelectorAll('.option').forEach(option => {
                 option.classList.remove('correct', 'incorrect');
+            });
+
+            document.querySelectorAll('.question-container').forEach(container => {
+                container.removeAttribute('open');
             });
 
             document.querySelectorAll('input[type="radio"]').forEach(radio => {
