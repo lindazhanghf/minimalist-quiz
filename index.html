@@ -586,7 +586,7 @@
                         return String(value);
                     }
                     try {
-                        return JSON.stringify(value, null, 2);
+                        return JSON.stringify(value);
                     } catch (e) {
                         return String(value);
                     }
@@ -600,25 +600,13 @@
                         const pretty = formatInfoValue(value)
                             .replace(/&/g, '&amp;')
                             .replace(/</g, '&lt;')
-                            .replace(/>/g, '&gt;');
-                        return `
-                            <details class="question-transcript" style="margin-top: 8px;">
-                                <summary><strong>${key}</strong></summary>
-                                <div class="transcript-body"><pre style="margin:0; white-space: pre-wrap;">${pretty}</pre></div>
-                            </details>
-                        `;
+                            .replace(/>/g, '&gt;')
+                            .trim();
+                        return `<details class="question-transcript"><summary><strong>${key}</strong></summary><div class="transcript-body" style="white-space: pre-wrap;">${pretty}</div></details>`;
                     }).join('');
 
                     const correctValue = (q && 'correct' in q) ? q.correct : '';
-                    infoHTML = `
-                        <details class="question-transcript" style="margin-top: 8px;">
-                            <summary><strong>Information</strong></summary>
-                            <div class="transcript-body">
-                                <div><strong>Correct:</strong> ${correctValue}</div>
-                                ${additionalDetails}
-                            </div>
-                        </details>
-                    `;
+                    infoHTML = `<details class="question-transcript"><summary><strong>Information</strong></summary><div class="transcript-body"><div><strong>Correct:</strong> ${correctValue}</div>${additionalDetails}</div></details>`;
                 }
 
                 questionDiv.innerHTML = `
