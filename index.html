@@ -374,7 +374,7 @@
                 <!-- <div><strong>Questions:</strong> <span id="totalQuestions">0</span></div> -->
                 <div><strong>Progress:</strong> <span id="progress">Not started</span></div>
                 <div>
-                    <button id="exportProgressBtn" class="dialog-btn secondary" style="padding: 8px 16px; font-size: 0.9em;" onclick="exportQuizProgress()" disabled>
+                    <button id="exportProgressBtn" class="dialog-btn secondary" style="padding: 8px 16px; font-size: 0.9em;" onclick="showExportDialog()" disabled>
                         Export Progress
                     </button>
                 </div>
@@ -402,6 +402,20 @@
                 <button class="dialog-btn success" id="exportBtn">💾 Export & Leave</button>
                 <button class="dialog-btn primary" id="stayBtn">Stay</button>
                 <button class="dialog-btn danger" id="leaveBtn">⚠️ Discard progress</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export JSON Dialog -->
+    <div id="exportDialog" class="dialog-overlay">
+        <div class="dialog" style="max-width: 700px; text-align: left;">
+            <h3>Export Quiz Progress (JSON)</h3>
+            <p style="margin-bottom: 10px;">Review and save your progress JSON below</p>
+            <textarea id="exportJsonText" style="width: 100%; min-height: 240px; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; resize: vertical; font-family: monospace; font-size: 0.95em;"></textarea>
+            <div class="dialog-buttons" style="margin-top: 15px; justify-content: flex-end;">
+                <button class="dialog-btn secondary" id="exportCopyBtn">Copy</button>
+                <button class="dialog-btn primary" id="exportDownloadBtn">Download JSON</button>
+                <button class="dialog-btn" id="exportCloseBtn">Close</button>
             </div>
         </div>
     </div>
@@ -778,12 +792,28 @@
             pendingNavigation = null;
         }
 
-        function exportQuizProgress() {
+        function getProgressJson() {
             const progressData = {
                 quizSet: quizData.id,
                 userAnswers: userAnswers,
                 timestamp: new Date().toISOString()
             };
+            return JSON.stringify(progressData, null, 2);
+        }
+
+        function showExportDialog() {
+            const textArea = document.getElementById('exportJsonText');
+            textArea.value = getProgressJson();
+            document.getElementById('exportDialog').style.display = 'flex';
+            // textArea.scrollTop = 0; // move caret to start for usability
+        }
+
+        function hideExportDialog() {
+            document.getElementById('exportDialog').style.display = 'none';
+        }
+
+        function exportQuizProgress() {
+            const jsonText = getProgressJson();
 
             const blob = new Blob([JSON.stringify(progressData, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
@@ -810,6 +840,23 @@
 
         // Event Listeners for Dialog Buttons
         document.getElementById('exportBtn').addEventListener('click', exportQuizProgress);
+        // Export dialog events
+        document.getElementById('exportDownloadBtn').addEventListener('click', function() {
+            exportQuizProgress();
+        });
+        document.getElementById('exportCopyBtn').addEventListener('click', async function() {
+            const text = document.getElementById('exportJsonText').value;
+            try {
+                await navigator.clipboard.writeText(text);
+                this.textContent = 'Copied!';
+                setTimeout(() => { this.textContent = 'Copy'; }, 1200);
+            } catch (err) {
+                alert('Copy failed. You can manually select and copy the text.');
+            }
+        });
+        document.getElementById('exportCloseBtn').addEventListener('click', function() {
+            hideExportDialog();
+        });
         document.getElementById('stayBtn').addEventListener('click', hideConfirmationDialog);
         document.getElementById('leaveBtn').addEventListener('click', function() {
             hideConfirmationDialog();
