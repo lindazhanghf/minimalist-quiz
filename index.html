@@ -365,6 +365,11 @@
                     </select>
                 </label>
                 <br>
+                <label style="display: inline-flex; align-items: center; gap: 8px; margin-top: 6px;">
+                    <input type="checkbox" id="practiceMode" />
+                    <span><strong>Practice mode</strong></span>
+                </label>
+                <br>
                 <button onclick="loadSelectedSet()" class="submit-btn" style="margin-top: 15px;">Load Quiz Set</button>
             </div>
         </details>
@@ -563,6 +568,7 @@
             container.innerHTML = '';
             userAnswers = {};
             quizStarted = true;
+            const practiceModeEnabled = !!document.getElementById('practiceMode') && document.getElementById('practiceMode').checked;
 
             // totalQuestionsSpan.textContent = quizData.length;
             document.getElementById('progress').textContent = `0 of ${quizData.length} answered`;
@@ -573,6 +579,47 @@
                 // Create a unique ID for this question's audio container
                 const audioContainerId = `audio-container-${q.id || index}`;
                 const imageContainerId = `image-container-${q.id || index}`;
+
+                function formatInfoValue(value) {
+                    if (value === null || value === undefined) return '' + value;
+                    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+                        return String(value);
+                    }
+                    try {
+                        return JSON.stringify(value, null, 2);
+                    } catch (e) {
+                        return String(value);
+                    }
+                }
+
+                let infoHTML = '';
+                if (practiceModeEnabled) {
+                    const excludedKeys = new Set(['id', 'question', 'correct', 'audio_url', 'image_url', 'options', 'transcript']);
+                    const additionalEntries = Object.entries(q).filter(([key]) => !excludedKeys.has(key));
+                    const additionalDetails = additionalEntries.map(([key, value]) => {
+                        const pretty = formatInfoValue(value)
+                            .replace(/&/g, '&amp;')
+                            .replace(/</g, '&lt;')
+                            .replace(/>/g, '&gt;');
+                        return `
+                            <details class="question-transcript" style="margin-top: 8px;">
+                                <summary><strong>${key}</strong></summary>
+                                <div class="transcript-body"><pre style="margin:0; white-space: pre-wrap;">${pretty}</pre></div>
+                            </details>
+                        `;
+                    }).join('');
+
+                    const correctValue = (q && 'correct' in q) ? q.correct : '';
+                    infoHTML = `
+                        <details class="question-transcript" style="margin-top: 8px;">
+                            <summary><strong>Information</strong></summary>
+                            <div class="transcript-body">
+                                <div><strong>Correct:</strong> ${correctValue}</div>
+                                ${additionalDetails}
+                            </div>
+                        </details>
+                    `;
+                }
 
                 questionDiv.innerHTML = `
                     <summary class="question-summary">
@@ -598,6 +645,7 @@
                         <summary><strong>Transcript</strong></summary>
                         <div class="transcript-body">${q.transcript}</div>
                     </details>
+                    ${infoHTML}
                 `;
 
                 // Add event listener for lazy loading media
