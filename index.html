@@ -343,6 +343,20 @@
                 <input type="file" id="jsonFile" accept=".json" />
             </label>
 
+            <div style="margin-top: 12px;">
+                <button id="togglePasteBtn" class="dialog-btn secondary" style="padding: 8px 16px; font-size: 0.9em;">Paste JSON instead</button>
+            </div>
+
+            <div id="pasteJsonContainer" class="file-input" style="display: none; margin-top: 12px; text-align: left;">
+                <label for="pastedJson"><strong>Paste JSON here:</strong></label>
+                <textarea id="pastedJson" placeholder="{ \"1\": [ { ...question objects... } ] }" style="width: 100%; min-height: 140px; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; resize: vertical;"></textarea>
+                <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+                    <button id="validateLoadPastedBtn" class="dialog-btn primary">Validate & Load</button>
+                    <button id="cancelPasteBtn" class="dialog-btn secondary">Cancel</button>
+                </div>
+                <div id="pasteHint" style="margin-top: 8px; color: #4a5568; font-size: 0.9em;">Max size: 200 KB. Must look like an object or array.</div>
+            </div>
+
             <div id="setSelection" class="file-input" style="display: none;">
                 <label for="quizSet">
                     <strong>Select Quiz Set:</strong><br>
@@ -416,6 +430,69 @@
                 reader.readAsText(file);
             } else {
                 alert('Please select a valid JSON file.');
+            }
+        });
+
+        // Read JSON from Textarea
+        const pasteToggleBtn = document.getElementById('togglePasteBtn');
+        const pasteContainer = document.getElementById('pasteJsonContainer');
+        const pasteTextarea = document.getElementById('pastedJson');
+        const validateLoadPastedBtn = document.getElementById('validateLoadPastedBtn');
+        const cancelPasteBtn = document.getElementById('cancelPasteBtn');
+
+        function togglePasteArea(show) {
+            if (typeof show === 'boolean') {
+                pasteContainer.style.display = show ? 'block' : 'none';
+            } else {
+                pasteContainer.style.display = pasteContainer.style.display === 'none' ? 'block' : 'none';
+            }
+            if (pasteContainer.style.display === 'block') {
+                pasteTextarea.focus();
+            }
+        }
+
+        function basicJsonShapeIsValid(text) {
+            if (!text) return false;
+            const trimmed = text.trim();
+            if (trimmed.length === 0) return false;
+            const maxChars = 200 * 1024; // 200 KB guardrail for static page
+            if (trimmed.length > maxChars) {
+                alert('Pasted text is too large (over 200 KB). Please use a file instead.');
+                return false;
+            }
+            const first = trimmed[0];
+            const last = trimmed[trimmed.length - 1];
+            const looksLikeJson = (first === '{' && last === '}') || (first === '[' && last === ']');
+            if (!looksLikeJson) {
+                alert('The pasted text does not look like JSON (must start with { or [ and end with } or ]).');
+                return false;
+            }
+            return true;
+        }
+
+        pasteToggleBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            togglePasteArea();
+        });
+
+        cancelPasteBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            pasteTextarea.value = '';
+            togglePasteArea(false);
+        });
+
+        validateLoadPastedBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const text = pasteTextarea.value;
+            if (!basicJsonShapeIsValid(text)) return;
+            try {
+                const data = JSON.parse(text);
+                loadQuizSets(data);
+                // hide paste UI after successful load
+                togglePasteArea(false);
+            } catch (error) {
+                alert('Invalid JSON text. Please check the format.');
+                console.error('JSON parsing error (pasted):', error);
             }
         });
 
