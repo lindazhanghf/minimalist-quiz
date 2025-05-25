@@ -612,7 +612,7 @@
                 questionDiv.innerHTML = `
                     <summary class="question-summary">
                         <div class="question-text">
-                            <strong>Question ${index + 1}:</strong> ${q.question}
+                            <strong>Question ${q.id}:</strong> ${q.question}
                         </div>
                     </summary>
                     ${q.audio_url ? `<div id="${audioContainerId}" class="audio-placeholder" data-audio-url="${baseDomain + q.audio_url}"></div>` : ''}
