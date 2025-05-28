@@ -159,6 +159,10 @@
             border-color: #e53e3e;
         }
 
+        .question-container.incorrect {
+            border-color: #fed7d7;
+        }
+
         .submit-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -757,8 +761,8 @@
 
                 if (userAnswer === correctAnswer) {
                     correct++;
-                } else { // For incorrect questions, expand details
-                    questionContainer.setAttribute('open', '');
+                } else { // For incorrect questions
+                    questionContainer.classList.add('incorrect');
                 }
                 console.log(`Q-${index}: user = ${userAnswer}, correct = ${q.correct} - ${correctAnswer}`)
             });
@@ -795,6 +799,7 @@
 
             document.querySelectorAll('.question-container').forEach(container => {
                 container.removeAttribute('open');
+                container.classList.remove('incorrect');
             });
 
             document.querySelectorAll('input[type="radio"]').forEach(radio => {
